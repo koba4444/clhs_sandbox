@@ -1,0 +1,13 @@
+FROM apache/superset:latest
+
+USER root  
+RUN echo "echo from Dockerfile-superset 1"
+RUN apt-get update 
+RUN apt-get install -y curl iproute2 net-tools traceroute
+RUN rm -rf /var/lib/apt/lists/*
+
+RUN pip install clickhouse-connect
+RUN echo "echo from Dockerfile-superset 2"
+
+USER superset
+

@@ -1,0 +1,64 @@
+version: '3.7'
+
+services:
+  clickhouse:
+    image: clickhouse/clickhouse-server
+    container_name: clickhouse
+    ports:
+      - "8123:8123"
+      - "9000:9000"
+    ulimits:
+      nofile:
+        soft: 262144
+        hard: 262144
+    volumes:
+      - ./clickhouse_data:/var/lib/clickhouse
+      - ./data:/home
+    networks:
+      - click_network
+
+  python:
+    image: python:3.9-slim
+    container_name: python_app
+    volumes:
+      - ./app:/app
+    working_dir: /app
+    networks:
+      - click_network
+    command: tail -f /dev/null # Оставляем контейнер работающим
+
+  airflow:
+    image: apache/airflow:2.3.0
+    container_name: airflow
+    environment:
+      - AIRFLOW__CORE__EXECUTOR=LocalExecutor
+      - AIRFLOW__CORE__SQL_ALCHEMY_CONN=sqlite:////tmp/airflow.db
+      - AIRFLOW__CORE__FERNET_KEY=your_fernet_key_here
+      - AIRFLOW__CORE__LOAD_EXAMPLES=False
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./airflow_data:/opt/airflow
+    networks:
+      - click_network
+    command: webserver
+
+  superset:
+    image: my-superset-with-clickhouse
+    container_name: superset
+    environment:
+      - SUPERSET_WEBSERVER_PORT=8088
+      - SECRET_KEY=ZohcCnWuX7xLX3b4mqbXsbn6iaKfyyZ8mvFb4e24Y5j6myoQ/w2DsSLd
+    ports:
+      - "8088:8088"
+    volumes:
+      - ./superset_data:/var/lib/superset
+      - ./superset_config.py:/app/pythonpath/superset_config.py  # Добавление конфигурационного файла в контейнер
+    networks:
+      - click_network
+    command: superset run -h 0.0.0.0 -p 8088 --with-threads --reload --debugger
+
+networks:
+  click_network:
+    driver: bridge
+

@@ -1,0 +1,25 @@
+
+
+cd clhs_arlw_sset_indocker
+docker-compose up --build -d
+
+
+
+# Донастройка суперсета. установка логинов-паролей
+docker exec -it superset superset fab create-admin --username admin --firstname Admin --lastname User --email admin@superset.com --password admin
+docker exec -it superset superset db upgrade
+docker exec -it superset superset load_examples
+docker exec -it superset superset init
+
+# Донастройка airflow. создание баз данных
+docker exec -it airflow airflow db init
+
+docker exec -it airflow airflow users create \
+    --username admin \
+    --firstname Admin \
+    --lastname User \
+    --role Admin \
+    --email admin@example.com \
+    --password admin
+
+

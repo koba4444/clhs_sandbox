@@ -1,0 +1,12 @@
+FROM clickhouse/clickhouse-server
+
+USER root  
+RUN apt-get update 
+RUN apt-get install -y curl iproute2 net-tools traceroute iputils-ping
+RUN rm -rf /var/lib/apt/lists/*
+
+CMD ["ping", "-c", "4", "google.com"]
+
+
+
+
