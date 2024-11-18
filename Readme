@@ -1,5 +1,12 @@
 
 
+
+
+
+# Убить процессы всех докеров (если они не удаляются командой даун)
+sudo kill -9 $(sudo docker inspect --format '{{.State.Pid}}' $(sudo docker ps -q))
+
+
 cd clhs_arlw_sset_indocker
 docker-compose up --build -d
 
