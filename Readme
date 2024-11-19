@@ -35,4 +35,8 @@ docker exec -it airflow airflow users create \
     --email admin@example.com \
     --password admin
 
-
+#5. Соединяем superset с clickhouse 
+pip install clickhouse-connect
+# Строка соединения clickhousedb://{username}:{password}@{hostname}:{port}/{database} 
+# или
+# (текущее) выпадающая опция "ClickHouse Connect (Superset)" с настройками clickhouse/8123 и пустыми логин/пароль
