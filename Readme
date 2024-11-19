@@ -3,23 +3,29 @@
 
 
 
-# Убить процессы всех докеров (если они не удаляются командой даун)
+# Убить процессы всех докеров (если они не удаляются командой  down)
 sudo kill -9 $(sudo docker inspect --format '{{.State.Pid}}' $(sudo docker ps -q))
 
+docker-compose down --volumes --remove-orphans
 
 cd clhs_arlw_sset_indocker
+
+#1. Перед запуском контейнеров иницилизировать airflow
+docker-compose run airflow airflow db init
+
+#2.
 docker-compose up --build -d
 
 
 
-# Донастройка суперсета. установка логинов-паролей
+#3. Донастройка суперсета. установка логинов-паролей
 docker exec -it superset superset fab create-admin --username admin --firstname Admin --lastname User --email admin@superset.com --password admin
 docker exec -it superset superset db upgrade
 docker exec -it superset superset load_examples
 docker exec -it superset superset init
 
-# Донастройка airflow. создание баз данных
-docker exec -it airflow airflow db init
+#4. Донастройка airflow
+
 
 docker exec -it airflow airflow users create \
     --username admin \
