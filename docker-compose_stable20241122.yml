@@ -55,9 +55,7 @@ services:
     command: /bin/bash -c "chmod 777 /app && tail -f /dev/null"
 
   airflow:
-    build:
-      context: .
-      dockerfile: Dockerfile-airflow
+    image: apache/airflow:2.3.0
     container_name: airflow
     environment:
       - AIRFLOW__CORE__EXECUTOR=CeleryExecutor
@@ -68,14 +66,12 @@ services:
       - AIRFLOW__CORE__LOAD_EXAMPLES=False
       - AIRFLOW__SCHEDULER__CATCHUP_BY_DEFAULT=False
       - AIRFLOW__SCHEDULER__MAX_ACTIVE_RUNS_PER_DAG=2
-      - RUNNING_IN_DOCKER=true
     ports:
       - "8080:8080"
     volumes:
       - ./airflow_data:/opt/airflow
-      #- /mnt/share/python_scripts/DWH/dags:/opt/airflow/dags/linked_ETL_dags
+      - /mnt/share/python_scripts/DWH/dags:/opt/airflow/dags/linked_ETL_dags
       - ~/python_scripts:/python_scripts
-      - /mnt/reports:/mnt/reports
     networks:
       - click_network
     depends_on:
@@ -85,9 +81,7 @@ services:
     command: webserver
 
   scheduler:
-    build:
-      context: .
-      dockerfile: Dockerfile-airflow
+    image: apache/airflow:2.3.0
     container_name: airflow_scheduler
     environment:
       - AIRFLOW__CORE__EXECUTOR=CeleryExecutor
@@ -98,11 +92,9 @@ services:
       - AIRFLOW__CORE__LOAD_EXAMPLES=False
       - AIRFLOW__SCHEDULER__CATCHUP_BY_DEFAULT=False
       - AIRFLOW__SCHEDULER__MAX_ACTIVE_RUNS_PER_DAG=2
-      - RUNNING_IN_DOCKER=true
     volumes:
       - ./airflow_data:/opt/airflow
       - ~/python_scripts:/python_scripts
-      - /mnt/reports:/mnt/reports
     networks:
       - click_network
     depends_on:
@@ -111,9 +103,7 @@ services:
     command: scheduler
 
   worker:
-    build:
-      context: .
-      dockerfile: Dockerfile-airflow
+    image: apache/airflow:2.3.0
     container_name: airflow_worker
     environment:
       - AIRFLOW__CORE__EXECUTOR=CeleryExecutor
@@ -124,11 +114,9 @@ services:
       - AIRFLOW__CORE__LOAD_EXAMPLES=False
       - AIRFLOW__SCHEDULER__CATCHUP_BY_DEFAULT=False
       - AIRFLOW__SCHEDULER__MAX_ACTIVE_RUNS_PER_DAG=2
-      - RUNNING_IN_DOCKER=true
     volumes:
       - ./airflow_data:/opt/airflow
       - ~/python_scripts:/python_scripts
-      - /mnt/reports:/mnt/reports
     networks:
       - click_network
     depends_on:
@@ -137,9 +125,7 @@ services:
     command: celery worker
 
   triggerer:
-    build:
-      context: .
-      dockerfile: Dockerfile-airflow
+    image: apache/airflow:2.3.0
     container_name: airflow_triggerer
     environment:
       - AIRFLOW__CORE__EXECUTOR=CeleryExecutor
@@ -150,11 +136,9 @@ services:
       - AIRFLOW__CORE__LOAD_EXAMPLES=False
       - AIRFLOW__SCHEDULER__CATCHUP_BY_DEFAULT=False
       - AIRFLOW__SCHEDULER__MAX_ACTIVE_RUNS_PER_DAG=2
-      - RUNNING_IN_DOCKER=true
     volumes:
       - ./airflow_data:/opt/airflow
       - ~/python_scripts:/python_scripts
-      - /mnt/reports:/mnt/reports
     networks:
       - click_network
     depends_on:
@@ -163,9 +147,7 @@ services:
     command: triggerer
 
   flower:
-    build:
-      context: .
-      dockerfile: Dockerfile-airflow
+    image: apache/airflow:2.3.0
     container_name: airflow_flower
     environment:
       - AIRFLOW__CORE__EXECUTOR=CeleryExecutor
@@ -174,7 +156,6 @@ services:
       - AIRFLOW__CELERY__BROKER_URL=redis://redis:6379/0
       - AIRFLOW__CORE__FERNET_KEY=b0a_36xVARWfsP1QRhS2GM3MwrDzsO0KGM4PPpwE0Uc=
       - AIRFLOW__CORE__LOAD_EXAMPLES=False
-      - RUNNING_IN_DOCKER=true
     ports:
       - "5555:5555"
     networks:
@@ -192,7 +173,7 @@ services:
       - SECRET_KEY=ZohcCnWuX7xLX3b4mqbXsbn6iaKfyyZ8mvFb4e24Y5j6myoQ/w2DsSLd
       - SQLALCHEMY_DATABASE_URI=postgresql+psycopg2://airflow:airflow@postgres:5432/superset
       - RATELIMIT_STORAGE_URI = "redis://redis:6379/3"
-      - RUNNING_IN_DOCKER=true
+
     ports:
       - "8088:8088"
     volumes:
@@ -202,7 +183,7 @@ services:
       - click_network
     restart: always
     command: superset run -h 0.0.0.0 -p 8088 --with-threads --reload --debugger
-
+    
 networks:
   click_network:
     driver: bridge

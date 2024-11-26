@@ -1,5 +1,5 @@
-
-
+# перезапуск GUI (если лагануло переключение раскладки клавиатуры)
+gnome-session-quit --logout --no-prompt
 
 
 
@@ -10,6 +10,8 @@ docker-compose down --volumes --remove-orphans
 
 cd clhs_arlw_sset_indocker
 
+
+#Запуск среды
 #1. Перед запуском контейнеров иницилизировать airflow
 docker-compose run airflow airflow db init
 
@@ -19,10 +21,16 @@ docker-compose up --build -d
 
 
 #3. Донастройка суперсета. установка логинов-паролей
-docker exec -it superset superset fab create-admin --username admin --firstname Admin --lastname User --email admin@superset.com --password admin
+docker exec -it superset superset fab create-admin --username admin --firstname Admin --lastname User --email admin@superset.com --password gdpthebest
 docker exec -it superset superset db upgrade
-docker exec -it superset superset load_examples
+#docker exec -it superset superset load_examples
 docker exec -it superset superset init
+
+# Создание базы данных для superset в postgres (если отсутсвует)
+docker exec -it postgres psql -U airflow
+CREATE DATABASE superset;
+\l
+\q
 
 #4. Донастройка airflow
 
@@ -33,10 +41,21 @@ docker exec -it airflow airflow users create \
     --lastname User \
     --role Admin \
     --email admin@example.com \
-    --password admin
+    --password gdpthebest
 
 #5. Соединяем superset с clickhouse 
 pip install clickhouse-connect
 # Строка соединения clickhousedb://{username}:{password}@{hostname}:{port}/{database} 
 # или
 # (текущее) выпадающая опция "ClickHouse Connect (Superset)" с настройками clickhouse/8123 и пустыми логин/пароль
+
+#6. Устраиваем символические ссылки на папки, где хранятся даги помимо основной (указанной в airflow.cfg)
+		# Папка, в которую монтируется директория для DAGs
+		AIRFLOW_DAGS_HOST_DIR=~/DWH/clhs_sandbox/airflow_data/dags
+
+		# Путь к дополнительной папке с DAGs
+		ADDITIONAL_DAGS_DIR=/mnt/share/python_scripts/DWH/dags
+
+		# Создание символической ссылки
+		ln -s $ADDITIONAL_DAGS_DIR $AIRFLOW_DAGS_HOST_DIR/linked_ETL_dags
+

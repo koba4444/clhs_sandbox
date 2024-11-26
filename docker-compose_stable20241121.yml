@@ -11,18 +11,18 @@ services:
       POSTGRES_DB: airflow
     volumes:
       - ./postgres_data:/var/lib/postgresql/data
+    #network_mode: host
     networks:
       - click_network
-    restart: always
 
   redis:
     image: redis:latest
     container_name: redis
     ports:
       - "6379:6379"
+    #network_mode: host
     networks:
       - click_network
-    restart: always
 
   clickhouse:
     build:
@@ -38,9 +38,9 @@ services:
         hard: 262144
     volumes:
       - ./clickhouse_data:/var/lib/clickhouse
+    #network_mode: host
     networks:
       - click_network
-    restart: always
     command: /bin/bash -c "/entrypoint.sh"
 
   python:
@@ -49,33 +49,35 @@ services:
     volumes:
       - ./app:/app
     working_dir: /app
+    #network_mode: host
     networks:
       - click_network
-    restart: always
-    command: /bin/bash -c "chmod 777 /app && tail -f /dev/null"
+    command: /bin/bash -c "chmod 777 /app && tail -f /dev/null"  # Добавляем команду chmod
+    #command: tail -f /dev/null # Keep the container running
 
   airflow:
-    build:
-      context: .
-      dockerfile: Dockerfile-airflow
+    image: apache/airflow:2.3.0
     container_name: airflow
     environment:
       - AIRFLOW__CORE__EXECUTOR=CeleryExecutor
       - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:airflow@postgres:5432/airflow
       - AIRFLOW__CELERY__RESULT_BACKEND=db+postgresql://airflow:airflow@postgres:5432/airflow
+
       - AIRFLOW__CELERY__BROKER_URL=redis://redis:6379/0
+
       - AIRFLOW__CORE__FERNET_KEY=b0a_36xVARWfsP1QRhS2GM3MwrDzsO0KGM4PPpwE0Uc=
       - AIRFLOW__CORE__LOAD_EXAMPLES=False
       - AIRFLOW__SCHEDULER__CATCHUP_BY_DEFAULT=False
       - AIRFLOW__SCHEDULER__MAX_ACTIVE_RUNS_PER_DAG=2
-      - RUNNING_IN_DOCKER=true
     ports:
       - "8080:8080"
     volumes:
       - ./airflow_data:/opt/airflow
-      #- /mnt/share/python_scripts/DWH/dags:/opt/airflow/dags/linked_ETL_dags
-      - ~/python_scripts:/python_scripts
-      - /mnt/reports:/mnt/reports
+      - /mnt/share/python_scripts/DWH/dags:/opt/airflow/dags/linked_ETL_dags
+
+      
+      
+    #network_mode: host
     networks:
       - click_network
     depends_on:
@@ -85,24 +87,22 @@ services:
     command: webserver
 
   scheduler:
-    build:
-      context: .
-      dockerfile: Dockerfile-airflow
+    image: apache/airflow:2.3.0
     container_name: airflow_scheduler
     environment:
       - AIRFLOW__CORE__EXECUTOR=CeleryExecutor
       - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:airflow@postgres:5432/airflow
       - AIRFLOW__CELERY__RESULT_BACKEND=db+postgresql://airflow:airflow@postgres:5432/airflow
+
+
       - AIRFLOW__CELERY__BROKER_URL=redis://redis:6379/0
       - AIRFLOW__CORE__FERNET_KEY=b0a_36xVARWfsP1QRhS2GM3MwrDzsO0KGM4PPpwE0Uc=
       - AIRFLOW__CORE__LOAD_EXAMPLES=False
       - AIRFLOW__SCHEDULER__CATCHUP_BY_DEFAULT=False
       - AIRFLOW__SCHEDULER__MAX_ACTIVE_RUNS_PER_DAG=2
-      - RUNNING_IN_DOCKER=true
     volumes:
       - ./airflow_data:/opt/airflow
-      - ~/python_scripts:/python_scripts
-      - /mnt/reports:/mnt/reports
+    #network_mode: host
     networks:
       - click_network
     depends_on:
@@ -111,75 +111,69 @@ services:
     command: scheduler
 
   worker:
-    build:
-      context: .
-      dockerfile: Dockerfile-airflow
+    image: apache/airflow:2.3.0
     container_name: airflow_worker
     environment:
       - AIRFLOW__CORE__EXECUTOR=CeleryExecutor
       - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:airflow@postgres:5432/airflow
       - AIRFLOW__CELERY__RESULT_BACKEND=db+postgresql://airflow:airflow@postgres:5432/airflow
+
+
       - AIRFLOW__CELERY__BROKER_URL=redis://redis:6379/0
+
       - AIRFLOW__CORE__FERNET_KEY=b0a_36xVARWfsP1QRhS2GM3MwrDzsO0KGM4PPpwE0Uc=
       - AIRFLOW__CORE__LOAD_EXAMPLES=False
       - AIRFLOW__SCHEDULER__CATCHUP_BY_DEFAULT=False
       - AIRFLOW__SCHEDULER__MAX_ACTIVE_RUNS_PER_DAG=2
-      - RUNNING_IN_DOCKER=true
     volumes:
       - ./airflow_data:/opt/airflow
-      - ~/python_scripts:/python_scripts
-      - /mnt/reports:/mnt/reports
+    #network_mode: host
     networks:
       - click_network
     depends_on:
       - airflow
-    restart: always
     command: celery worker
 
   triggerer:
-    build:
-      context: .
-      dockerfile: Dockerfile-airflow
+    image: apache/airflow:2.3.0
     container_name: airflow_triggerer
     environment:
       - AIRFLOW__CORE__EXECUTOR=CeleryExecutor
       - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:airflow@postgres:5432/airflow
       - AIRFLOW__CELERY__RESULT_BACKEND=db+postgresql://airflow:airflow@postgres:5432/airflow
+
       - AIRFLOW__CELERY__BROKER_URL=redis://redis:6379/0
+
       - AIRFLOW__CORE__FERNET_KEY=b0a_36xVARWfsP1QRhS2GM3MwrDzsO0KGM4PPpwE0Uc=
       - AIRFLOW__CORE__LOAD_EXAMPLES=False
       - AIRFLOW__SCHEDULER__CATCHUP_BY_DEFAULT=False
       - AIRFLOW__SCHEDULER__MAX_ACTIVE_RUNS_PER_DAG=2
-      - RUNNING_IN_DOCKER=true
     volumes:
       - ./airflow_data:/opt/airflow
-      - ~/python_scripts:/python_scripts
-      - /mnt/reports:/mnt/reports
+    #network_mode: host
     networks:
       - click_network
     depends_on:
       - airflow
-    restart: always
     command: triggerer
 
   flower:
-    build:
-      context: .
-      dockerfile: Dockerfile-airflow
+    image: apache/airflow:2.3.0
     container_name: airflow_flower
     environment:
       - AIRFLOW__CORE__EXECUTOR=CeleryExecutor
       - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:airflow@postgres:5432/airflow
       - AIRFLOW__CELERY__RESULT_BACKEND=db+postgresql://airflow:airflow@postgres:5432/airflow
+
       - AIRFLOW__CELERY__BROKER_URL=redis://redis:6379/0
+
       - AIRFLOW__CORE__FERNET_KEY=b0a_36xVARWfsP1QRhS2GM3MwrDzsO0KGM4PPpwE0Uc=
       - AIRFLOW__CORE__LOAD_EXAMPLES=False
-      - RUNNING_IN_DOCKER=true
     ports:
       - "5555:5555"
+    #network_mode: host
     networks:
       - click_network
-    restart: always
     command: celery flower
 
   superset:
@@ -190,19 +184,16 @@ services:
     environment:
       - SUPERSET_WEBSERVER_PORT=8088
       - SECRET_KEY=ZohcCnWuX7xLX3b4mqbXsbn6iaKfyyZ8mvFb4e24Y5j6myoQ/w2DsSLd
-      - SQLALCHEMY_DATABASE_URI=postgresql+psycopg2://airflow:airflow@postgres:5432/superset
-      - RATELIMIT_STORAGE_URI = "redis://redis:6379/3"
-      - RUNNING_IN_DOCKER=true
     ports:
       - "8088:8088"
     volumes:
       - ./superset_data:/var/lib/superset
       - ./superset_config.py:/app/pythonpath/superset_config.py
+    #network_mode: host
     networks:
       - click_network
-    restart: always
     command: superset run -h 0.0.0.0 -p 8088 --with-threads --reload --debugger
-
+    
 networks:
   click_network:
     driver: bridge

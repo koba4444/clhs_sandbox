@@ -9,5 +9,7 @@ RUN rm -rf /var/lib/apt/lists/*
 RUN pip install clickhouse-connect
 RUN echo "echo from Dockerfile-superset 2"
 
+RUN pip install psycopg2-binary
+
 USER superset
 

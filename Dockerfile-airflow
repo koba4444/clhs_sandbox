@@ -1,0 +1,12 @@
+#FROM apache/airflow:2.3.0
+FROM apache/airflow:2.10.3
+
+USER root
+
+# Копируем файл с зависимостями
+COPY airflow-requirements.txt /opt/airflow/airflow-requirements.txt
+
+# Устанавливаем пакеты от имени airflow
+USER airflow
+RUN pip install --no-cache-dir -r /opt/airflow/airflow-requirements.txt
+
